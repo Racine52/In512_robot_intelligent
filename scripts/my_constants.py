@@ -13,6 +13,7 @@ MOVE = 2
 GET_NB_CONNECTED_AGENTS = 3
 GET_NB_AGENTS = 4
 GET_ITEM_OWNER = 5
+TP = 6  #teleport the agent to a random location
 
 """ ALLOWED MOVES """
 STAND = 0   #do not move
