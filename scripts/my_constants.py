@@ -13,7 +13,9 @@ MOVE = 2
 GET_NB_CONNECTED_AGENTS = 3
 GET_NB_AGENTS = 4
 GET_ITEM_OWNER = 5
-TP = 6  #teleport the agent to a random location
+
+MAPPING = 6
+
 
 """ ALLOWED MOVES """
 STAND = 0   #do not move
@@ -44,3 +46,8 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+
+""" AGENT MODE """
+CLASSIQUE = 100
+RESSEARCHANDDESTROY = 101
+GOTARGET = 102

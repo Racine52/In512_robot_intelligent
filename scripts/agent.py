@@ -17,10 +17,11 @@ class Agent:
     """ Class that implements the behaviour of each agent based on their perception and communication with other agents """
     def __init__(self, server_ip):
         #TODO: DEINE YOUR ATTRIBUTES HERE
+        self.mode = CLASSIQUE
+
         
         self.key_position = None
         self.box_position = None
-
         #DO NOT TOUCH THE FOLLOWING INSTRUCTIONS
         self.network = Network(server_ip=server_ip)
         self.agent_id = self.network.id
@@ -32,6 +33,10 @@ class Agent:
         self.nb_agent_connected = 0
         self.x, self.y = env_conf["x"], env_conf["y"]   #initial agent position
         self.w, self.h = env_conf["w"], env_conf["h"]   #environment dimensions
+
+        self.layout = np.zeros((self.w, self.h), dtype=int).T
+
+
         cell_val = env_conf["cell_val"] #value of the cell the agent is located in
         print(cell_val)
         Thread(target=self.msg_cb, daemon=True).start()
@@ -93,6 +98,317 @@ class Agent:
             cmds = {"header": BROADCAST_MSG, "Msg type": item_type, "position": position, "owner": owner}
             agent.network.send(cmds)
 
+    #TODO: CREATE YOUR METHODS HERE...
+
+
+    def build_transformation(self):
+        t = np.pi / 2
+        r1 = np.array([[np.cos(t), - np.sin(t), 0, 0],
+                       [np.sin(t), np.cos(t), 1, 0], 
+                       [0, 1, 0, 0], 
+                       [0, 0, 0, 1]])
+        t = np.pi
+        r2 = np.array([[1, 0, 0, 0],
+                       [0, np.cos(t), -np.sin(t), 0], 
+                       [0, np.sin(t), np.cos(t), 0], 
+                       [0, 0, 0, 1]])
+        
+        self.transform =  np.dot(r1, r2)
+    
+    def layout_to_map(self, x:int, y:int) -> tuple:
+        tmp = np.dot(self.transform, np.array([x, y, 0, 1]))[:2]
+
+        return int(tmp[0]), int(tmp[1])
+
+    def update_layout(self):
+        with open(f"layout_{self.agent_id}.txt", "w") as f:
+                for row in self.layout:
+                    f.write(" ".join(map(str, row)) + "\n") 
+
+    def build_layout(self):
+        self.update_layout()
+        print(self.layout[26, 32])
+        if self.w >= self.h:
+
+            nb_lines = int(np.ceil(self.w / 4) // 2 * 2)
+            for i in range(int(nb_lines/2)):
+                self.layout[2:self.h-2, 2 + (5 * i)] = 1
+            for i in range(int(nb_lines/2)):
+                self.layout[2:self.h-2, self.w - 3 - (5 * i)] = 1
+
+
+            self.layout[2, 2:self.w-3] = 1
+
+            self.update_layout()
+            
+        else:
+            pass
+    
+    def attribute(self):
+        zone_width = (self.w - 4) // self.nb_agent_expected
+        self.zone_start = self.agent_id * zone_width + 2
+        self.zone_end = self.zone_start + zone_width
+
+    def find_path(self, end:tuple) -> list:
+        start = (self.x, self.y)
+        path = []
+        x1, y1 = start
+        x2, y2 = end
+
+        dx = abs(x2 - x1)
+        dy = abs(y2 - y1)
+        sx = 1 if x1 < x2 else -1
+        sy = 1 if y1 < y2 else -1
+        err = dx - dy
+
+        while True:
+            path.append((x1, y1))
+            if (x1, y1) == (x2, y2):
+                break
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x1 += sx
+            if e2 < dx:
+                err += dx
+                y1 += sy
+
+        return path
+
+    def find_neighbour(self) -> tuple:
+        n, m = self.layout.shape
+        min_dist = float("inf")
+        closest_point = None
+
+        for i in range(n):
+            for j in range(m):
+                x, y = self.layout_to_map(i, j)
+                if self.layout[i][j] == 1:
+                    dist = abs(i - self.y) + abs(j - self.x)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_point = (i, j)
+        # print(f"Agent position: ({self.x}, {self.y})")                
+        # print(f"Closest point: {closest_point}")
+
+        return closest_point
+    
+
+    def find_item(self):
+        
+
+        vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
+
+        list_dir = [UP, DOWN, LEFT, RIGHT]
+        inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
+
+
+        cv = 0
+
+        while cv != 1.0:
+            for i in list_dir:
+                cmds = {"header": MOVE, "direction": i}
+                self.network.send(cmds)
+                sleep(2)
+                self.network.send({"header": GET_DATA})
+                print("C'EST MON MESSAGE ÇA: ", self.msg["cell_val"])
+                vals[i] = self.msg["cell_val"]
+                if vals[i] == 1.0:
+                    cv = 1.0
+                    break
+                cmds = {"header": MOVE, "direction": inv_[i]}
+                self.network.send(cmds)
+                sleep(2)
+            direction = 0
+            print("\n-----------------------------------------")
+            print("Valeurs sent", vals)
+            print("-----------------------------------------")
+            
+            if cv == 1.0:
+                print(f"Item found at position: ({self.x}, {self.y})")
+                return
+            elif (vals[UP] == vals[RIGHT]) and (vals[UP] > vals[LEFT]) and (vals[UP] > vals[DOWN]):
+                direction = UP_RIGHT
+            elif (vals[UP] == vals[LEFT]) and (vals[UP] > vals[RIGHT]) and (vals[UP] > vals[DOWN]):
+                direction = UP_LEFT
+            elif (vals[DOWN] == vals[RIGHT]) and (vals[DOWN] > vals[LEFT]) and (vals[DOWN] > vals[UP]):
+                direction = DOWN_RIGHT
+            elif (vals[DOWN] == vals[LEFT]) and (vals[DOWN] > vals[RIGHT]) and (vals[DOWN] > vals[UP]):
+                direction = DOWN_LEFT
+            else:
+                direction = max(vals, key=vals.get)
+            
+            print(f"Direction: {direction} -----------------------------------------")
+            print(f"cell value: {cv}")
+            with open('direction.txt', 'w') as f:
+                f.write(str(direction))
+
+                
+            cmds = {"header": MOVE, "direction":direction}    
+            self.network.send(cmds)
+
+            cv = self.msg["cell_val"]
+            vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
+
+            
+
+        print(f"Item found at position: ({self.x}, {self.y})")
+        return
+
+
+            
+            
+
+
+
+
+
+        # prev_pos = [(self.x, self.y)]
+        # prev_val = [self.msg["cell_val"]]
+
+        # mode = 0 if prev_dir == LEFT or prev_dir == RIGHT else 1
+
+        # if mode == 0:
+        #     # Handle previous direction being LEFT
+        #     cmds = {"header": MOVE, "direction": UP}
+        #     self.network.send(cmds)
+        #     prev_val.append(self.msg["cell_val"])
+        #     move = 0
+            
+        #     while self.msg["cell_val"] < 0.7:
+
+        #         if prev_val[-1] > prev_val[-2]:
+        #             move = UP
+        #         elif prev_val[-1] < prev_val[-2]:
+        #             move = DOWN
+        #         elif prev_val[-1] == prev_val[-2]:
+        #             mode = 1
+        #             break
+
+
+        #         cmds = {"header": MOVE, "direction": move}
+        #         self.network.send(cmds)
+        #         prev_val.append(self.msg["cell_val"])
+        # else:
+        #     # Handle previous direction being LEFT
+        #     cmds = {"header": MOVE, "direction": RIGHT}
+        #     self.network.send(cmds)
+        #     prev_val.append(self.msg["cell_val"])
+        #     move = 0
+            
+        #     while self.msg["cell_val"] < 0.7:
+
+        #         if prev_val[-1] > prev_val[-2]:
+        #             move = RIGHT
+        #         elif prev_val[-1] < prev_val[-2]:
+        #             move = LEFT
+        #         elif prev_val[-1] == prev_val[-2]:
+        #             mode = 0
+        #             break
+
+
+        #         cmds = {"header": MOVE, "direction": move}
+        #         self.network.send(cmds)
+        #         prev_val.append(self.msg["cell_val"])
+
+        
+
+
+
+
+    def check_mode(self):
+        if self.msg["cell_val"] in [0.3, 0.6, 0.25, 0.5]:
+            if self.mode == CLASSIQUE:
+                self.mode = RESSEARCHANDDESTROY
+        else:
+            if self.mode == RESSEARCHANDDESTROY:
+                self.mode = CLASSIQUE
+
+    
+    def move(self, direction:int):
+        
+        cmds = {"header": MOVE, "direction": direction}
+        
+        self.network.send(cmds)
+        sleep(0.5)
+        self.check_mode()
+
+    def follow_path(self, path):
+
+        x1, y1 = self.x, self.y
+
+        direction = None
+        
+        for i in path:
+            
+            x2, y2 = i
+            if x2 > x1 and y2 == y1:
+                direction = RIGHT
+            elif x2 < x1 and y2 == y1:
+                direction = LEFT
+            elif x2 == x1 and y2 > y1:
+                direction = DOWN
+            elif x2 == x1 and y2 < y1:
+                direction = UP
+            elif x2 > x1 and y2 > y1:
+                direction = DOWN_RIGHT
+            elif x2 > x1 and y2 < y1:
+                direction = UP_RIGHT
+            elif x2 < x1 and y2 > y1:
+                direction = DOWN_LEFT
+            elif x2 < x1 and y2 < y1:
+                direction = UP_LEFT
+
+            self.move(direction)
+            x1, y1 = self.x, self.y
+
+            if self.mode == RESSEARCHANDDESTROY:
+                self.find_item()
+                return
+
+
+    def A_star(self, end) -> list:
+        start = (self.x, self.y)
+        open_set = set()
+        open_set.add(start)
+        came_from = {}
+
+        g_score = {start: 0}
+        f_score = {start: abs(start[0] - end[0]) + abs(start[1] - end[1])}
+
+        while open_set:
+            current = min(open_set, key=lambda x: f_score.get(x, float('inf')))
+            if current == end:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.reverse()
+                return path
+
+            open_set.remove(current)
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                neighbor = (current[0] + dx, current[1] + dy)
+                if 0 <= neighbor[0] < self.w and 0 <= neighbor[1] < self.h and self.layout[neighbor[1]][neighbor[0]] == 1:
+                    tentative_g_score = g_score[current] + 1
+                    if tentative_g_score < g_score.get(neighbor, float('inf')):
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g_score
+                        f_score[neighbor] = tentative_g_score + abs(neighbor[0] - end[0]) + abs(neighbor[1] - end[1])
+                        open_set.add(neighbor)
+
+        return []
+
+    def find_fork(self) -> list:
+        layout_path = []
+
+        r = self.zone_end + 1 if self.agent_id == (self.nb_agent_expected - 1) else self.zone_end
+        for i in range(self.zone_start, r ):
+            if self.layout[self.h - 3, i] == 1:
+                layout_path.append((i, self.h - 3))
+        
+        return layout_path
+
  
 if __name__ == "__main__":
     from random import randint
@@ -113,7 +429,36 @@ if __name__ == "__main__":
                 cmds["owner"] = agent.owner
             elif cmds["header"] == MOVE:
                 cmds["direction"] = int(input("0 <-> Stand\n1 <-> Left\n2 <-> Right\n3 <-> Up\n4 <-> Down\n5 <-> UL\n6 <-> UR\n7 <-> DL\n8 <-> DR\n"))
-            agent.network.send(cmds)
+            elif cmds["header"] == MAPPING:
+                agent.build_transformation()
+                agent.build_layout()
+                agent.attribute()
+                
+                print(f"Position: ({agent.x}, {agent.y})")
+                x, y = agent.find_neighbour()
+                print(f"Neighbour: ({x}, {y})")
+                print("transform: ", agent.layout_to_map(x, y))
+                end = agent.layout_to_map(x, y)
+                path = agent.find_path(end)[1:]
+                print(f"Path 1: {path}")
+                agent.follow_path(path)
+                
+                print(f"Position: ({agent.x}, {agent.y})")
+                path = agent.A_star((agent.zone_start,2))
+                print(f"Path 2: {path}")
+                agent.follow_path(path)
+                print(agent.nb_agent_expected)
+                print(f"Agent {agent.agent_id} is responsible for the zone {agent.zone_start} - {agent.zone_end}")
+
+                fork = agent.find_fork()
+                print(f"Fork: {fork}")
+
+                for i in fork:
+                    path = agent.A_star(i)
+                    agent.follow_path(path)
+            
+            else:
+                agent.network.send(cmds)
     except KeyboardInterrupt:
         pass
 # it is always the same location of the agent first location
