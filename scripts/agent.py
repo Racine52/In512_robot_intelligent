@@ -55,6 +55,7 @@ class Agent:
             if msg["header"] == MOVE:
                 self.x, self.y =  msg["x"], msg["y"]
                 self.cell_vall = msg["cell_val"]
+                self.check_mode()
                 print(self.x, self.y)
             elif msg["header"] == GET_NB_AGENTS:
                 self.nb_agent_expected = msg["nb_agents"]
@@ -257,9 +258,7 @@ class Agent:
                 f.write("cell value: " + str(self.x) + ', ' + str(self.y) + "\n\n")
                 
 
-                
-            cmds = {"header": MOVE, "direction":direction}    
-            self.network.send(cmds)
+            self.move(direction)
             self.network.send({"header": GET_ITEM_OWNER})
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
 
@@ -344,7 +343,6 @@ class Agent:
         
         self.network.send(cmds)
         sleep(0.5)
-        self.check_mode()
 
     def follow_path(self, path):
 
