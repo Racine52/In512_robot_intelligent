@@ -1,1 +1,332 @@
-3
+vals{3: np.float64(0.3), 4: np.float64(0.3), 1: np.float64(0.6), 2: np.float64(0.0)}
+direction 1
+ps: 33, 1
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+ps: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.3), 1: np.float64(0.6), 2: np.float64(0.3)}
+direction 5
+ps: 32, 1
+
+vals{3: np.float64(0.3), 4: np.float64(0.3), 1: np.float64(0.6), 2: np.float64(0.0)}
+direction 1
+cell value: 33, 1
+
+vals{3: np.float64(0.0), 4: np.float64(0.25), 1: np.float64(0.0), 2: np.float64(0.25)}
+direction 8
+cell value: 2, 13
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 32, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.3), 1: np.float64(0.6), 2: np.float64(0.3)}
+direction 5
+cell value: 32, 1
+
+vals{3: np.float64(0.3), 4: np.float64(0.3), 1: np.float64(0.0), 2: np.float64(0.6)}
+direction 2
+cell value: 12, 9
+
+vals{3: np.float64(0.3), 4: np.float64(0.3), 1: np.float64(0.0), 2: np.float64(0.6)}
+direction 2
+cell value: 12, 9
+
+vals{3: np.float64(0.3), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.0)}
+direction 5
+cell value: 29, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.3), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.0)}
+direction 5
+cell value: 29, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.3)}
+direction 3
+cell value: 28, 2
+
+vals{3: np.float64(0.0), 4: np.float64(0.25), 1: np.float64(0.0), 2: np.float64(0.25)}
+direction 8
+cell value: 2, 13
+
+vals{3: np.float64(0.25), 4: np.float64(0.5), 1: np.float64(0.25), 2: np.float64(0.5)}
+direction 8
+cell value: 3, 14
+
+vals{3: np.float64(0.3), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.0)}
+direction 5
+cell value: 29, 2
+
+vals{3: np.float64(0.6), 4: np.float64(0.3), 1: np.float64(0.6), 2: np.float64(0.3)}
+direction 5
+cell value: 28, 1
+
+vals{3: np.float64(0.3), 4: np.float64(0.0), 1: np.float64(0.3), 2: np.float64(0.0)}
+direction 5
+cell value: 29, 2
+
+vals{3: np.float64(0.0), 4: np.float64(0.25), 1: np.float64(0.0), 2: np.float64(0.25)}
+direction 8
+cell value: 2, 13
+
+vals{3: np.float64(0.6), 4: np.float64(0.3), 1: np.float64(0.6), 2: np.float64(0.3)}
+direction 5
+cell value: 28, 1
+

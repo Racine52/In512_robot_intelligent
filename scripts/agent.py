@@ -22,6 +22,8 @@ class Agent:
         
         self.key_position = None
         self.box_position = None
+        
+        self.cell_vall = np.float64(0.0)
         #DO NOT TOUCH THE FOLLOWING INSTRUCTIONS
         self.network = Network(server_ip=server_ip)
         self.agent_id = self.network.id
@@ -52,6 +54,8 @@ class Agent:
             self.msg = msg
             if msg["header"] == MOVE:
                 self.x, self.y =  msg["x"], msg["y"]
+                self.cell_vall = msg["cell_val"]
+                self.check_mode()
                 print(self.x, self.y)
             elif msg["header"] == GET_NB_AGENTS:
                 self.nb_agent_expected = msg["nb_agents"]
@@ -203,28 +207,25 @@ class Agent:
         inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
 
 
-        cv = 0
-
-        while cv != 1.0:
+        while self.cell_vall != np.float64(1.0):
+            
             for i in list_dir:
                 cmds = {"header": MOVE, "direction": i}
                 self.network.send(cmds)
-                sleep(2)
-                self.network.send({"header": GET_DATA})
-                print("C'EST MON MESSAGE ÇA: ", self.msg["cell_val"])
-                vals[i] = self.msg["cell_val"]
-                if vals[i] == 1.0:
-                    cv = 1.0
+                sleep(1)
+                vals[i] = self.cell_vall
+                if self.cell_vall == np.float64(1.0):
                     break
                 cmds = {"header": MOVE, "direction": inv_[i]}
                 self.network.send(cmds)
-                sleep(2)
-            direction = 0
-            print("\n-----------------------------------------")
-            print("Valeurs sent", vals)
-            print("-----------------------------------------")
+                sleep(1)
             
-            if cv == 1.0:
+            direction = 0
+            
+            sleep(1)
+            
+            if self.cell_vall == np.float64(1.0):
+                self.network.send({"header": GET_ITEM_OWNER})
                 print(f"Item found at position: ({self.x}, {self.y})")
                 return
             elif (vals[UP] == vals[RIGHT]) and (vals[UP] > vals[LEFT]) and (vals[UP] > vals[DOWN]):
@@ -235,19 +236,30 @@ class Agent:
                 direction = DOWN_RIGHT
             elif (vals[DOWN] == vals[LEFT]) and (vals[DOWN] > vals[RIGHT]) and (vals[DOWN] > vals[UP]):
                 direction = DOWN_LEFT
+            elif (vals[UP] == vals[DOWN]) and (vals[LEFT] > vals[RIGHT]):
+                direction = LEFT
+            elif (vals[UP] == vals[DOWN]) and (vals[LEFT] < vals[RIGHT]):
+                direction = RIGHT
+            elif (vals[RIGHT] == vals[LEFT]) and (vals[DOWN] > vals[UP]):
+                direction = DOWN
+            elif (vals[RIGHT] == vals[LEFT]) and (vals[DOWN] < vals[UP]):
+                direction = UP
             else:
+                print('je suis dans ce cas de figure')
+                print(vals)
                 direction = max(vals, key=vals.get)
+                print(direction)
             
             print(f"Direction: {direction} -----------------------------------------")
-            print(f"cell value: {cv}")
-            with open('direction.txt', 'w') as f:
-                f.write(str(direction))
-
+            print(f"cell value: {self.cell_vall}")
+            with open('direction.txt', 'a') as f:
+                f.write("vals" + str(vals)+"\n")
+                f.write("direction " + str(direction)+"\n")
+                f.write("cell value: " + str(self.x) + ', ' + str(self.y) + "\n\n")
                 
-            cmds = {"header": MOVE, "direction":direction}    
-            self.network.send(cmds)
 
-            cv = self.msg["cell_val"]
+            self.move(direction)
+            self.network.send({"header": GET_ITEM_OWNER})
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
 
             
@@ -331,7 +343,6 @@ class Agent:
         
         self.network.send(cmds)
         sleep(0.5)
-        self.check_mode()
 
     def follow_path(self, path):
 
@@ -427,8 +438,10 @@ if __name__ == "__main__":
                 cmds["position"] = (agent.x, agent.y)
                 agent.network.send({"header": GET_ITEM_OWNER})
                 cmds["owner"] = agent.owner
+                agent.network.send(cmds)
             elif cmds["header"] == MOVE:
                 cmds["direction"] = int(input("0 <-> Stand\n1 <-> Left\n2 <-> Right\n3 <-> Up\n4 <-> Down\n5 <-> UL\n6 <-> UR\n7 <-> DL\n8 <-> DR\n"))
+                agent.network.send(cmds)
             elif cmds["header"] == MAPPING:
                 agent.build_transformation()
                 agent.build_layout()
