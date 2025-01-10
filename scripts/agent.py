@@ -40,9 +40,9 @@ class Agent:
 
 
         cell_val = env_conf["cell_val"] #value of the cell the agent is located in
-        print(cell_val)
+        # print(cell_val)
         Thread(target=self.msg_cb, daemon=True).start()
-        print("hello")
+        # print("hello")
         self.wait_for_connected_agent()
 
         
@@ -50,13 +50,13 @@ class Agent:
         """ Method used to handle incoming messages """
         while self.running:
             msg = self.network.receive()
-            print('HEDER : ', msg["header"])
+            print('HEADER : ', msg["header"])
             self.msg = msg
             if msg["header"] == MOVE:
                 self.x, self.y =  msg["x"], msg["y"]
                 self.cell_vall = msg["cell_val"]
                 self.check_mode()
-                print(self.x, self.y)
+                # print(self.x, self.y)
             elif msg["header"] == GET_NB_AGENTS:
                 self.nb_agent_expected = msg["nb_agents"]
             elif msg["header"] == GET_NB_CONNECTED_AGENTS:
@@ -107,10 +107,10 @@ class Agent:
         
         if item_type == KEY_TYPE and self.keys_positions[owner] is None :
             self.keys_positions[owner] = position
-            print("I have my key!")
+            # print("I have my key!")
         elif item_type == BOX_TYPE and self.boxes_positions[owner] is None:
             self.boxes_positions[owner] = position
-            print("I have my box!")
+            # print("I have my box!")
         
         
         # self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
@@ -152,7 +152,6 @@ class Agent:
 
     def build_layout(self):
         self.update_layout()
-        print(self.layout[26, 32])
         if self.w >= self.h:
 
             nb_lines = int(np.ceil(self.w / 4) // 2 * 2)
@@ -174,8 +173,9 @@ class Agent:
         self.zone_start = self.agent_id * zone_width + 2
         self.zone_end = self.zone_start + zone_width
 
-    def find_path(self, end:tuple) -> list:
-        start = (self.x, self.y)
+    def find_path(self, end:tuple, start = None) -> list:
+        if start is None:
+            start = (self.x, self.y)
         path = []
         x1, y1 = start
         x2, y2 = end
@@ -198,7 +198,7 @@ class Agent:
                 err += dx
                 y1 += sy
 
-        return path
+        return path[1:]
 
     def find_neighbour(self, target = None) -> tuple:
         if target is None:
@@ -238,7 +238,7 @@ class Agent:
             
             if self.cell_vall == np.float64(1.0):
                 self.network.send({"header": GET_ITEM_OWNER})
-                print(f"Item found at position: ({self.x}, {self.y})")
+                # print(f"Item found at position: ({self.x}, {self.y})")
                 return
             elif (vals[UP] == vals[RIGHT]) and (vals[UP] > vals[LEFT]) and (vals[UP] > vals[DOWN]):
                 direction = UP_RIGHT
@@ -257,13 +257,13 @@ class Agent:
             elif (vals[RIGHT] == vals[LEFT]) and (vals[DOWN] < vals[UP]):
                 direction = UP
             else:
-                print('je suis dans ce cas de figure')
-                print(vals)
+                # print('je suis dans ce cas de figure')
+                # print(vals)
                 direction = max(vals, key=vals.get)
-                print(direction)
+            #     print(direction)
             
-            print(f"Direction: {direction} -----------------------------------------")
-            print(f"cell value: {self.cell_vall}")
+            # print(f"Direction: {direction} -----------------------------------------")
+            # print(f"cell value: {self.cell_vall}")
             with open('direction.txt', 'a') as f:
                 f.write("vals" + str(vals)+"\n")
                 f.write("direction " + str(direction)+"\n")
@@ -277,7 +277,7 @@ class Agent:
 
             
 
-        print(f"Item found at position: ({self.x}, {self.y})")
+        # print(f"Item found at position: ({self.x}, {self.y})")
         return
 
 
@@ -337,6 +337,9 @@ class Agent:
         #         prev_val.append(self.msg["cell_val"])
 
     def check_mode(self):
+        if self.mode == GOTARGET: 
+            return
+        
         def is_near(x, y, positions):
             """Vérifie si (x, y) est proche de l'une des positions (±2)."""
             return any(
@@ -347,7 +350,7 @@ class Agent:
         cell_val_condition = self.msg["cell_val"] in [0.3, 0.6, 0.25, 0.5]
         near_keys = is_near(self.x, self.y, self.keys_positions)
         near_boxes = is_near(self.x, self.y, self.boxes_positions)
-
+                  
         if cell_val_condition and not (near_keys or near_boxes):
             
             if self.mode == CLASSIQUE:
@@ -400,11 +403,14 @@ class Agent:
             if self.mode == RESSEARCHANDDESTROY:
                 self.find_item()
                 self.back_on_track()
-            
+
             elif not self.mode == GOTARGET:
                 if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
-                    self.debug([f"Swithing to mode: {self.mode}"])
-                    return True    
+                    self.mode = GOTARGET
+                    # self.debug([f'MODE {self.mode}'])
+                    return True
+            
+              
 
     def A_star(self, end) -> list:
         start = (self.x, self.y)
@@ -448,8 +454,37 @@ class Agent:
         
         return layout_path
 
-    def find_target(self):
-        pass
+    def get_target(self):
+        
+        key_pos = self.keys_positions[self.agent_id]
+
+        key_neighbour = self.find_neighbour(key_pos)
+        key_neighbour = self.layout_to_map(key_neighbour[0], key_neighbour[1])
+    
+        key_path = self.A_star(key_neighbour) + self.find_path(key_pos, key_neighbour)
+        
+
+        self.follow_path(key_path)
+
+        box_pos = self.boxes_positions[self.agent_id]
+
+        box_neighbour = self.find_neighbour(box_pos)
+        box_neighbour = self.layout_to_map(box_neighbour[0], box_neighbour[1])
+
+        agent_neighbour = self.find_neighbour()
+        agent_neighbour = self.layout_to_map(agent_neighbour[0], agent_neighbour[1])
+        
+        self.follow_path(self.find_path(agent_neighbour))
+        self.follow_path(self.A_star(box_neighbour) + self.find_path(box_pos, box_neighbour))
+
+
+    
+
+
+
+
+        
+        
 
 
 if __name__ == "__main__":
@@ -480,30 +515,30 @@ if __name__ == "__main__":
                 agent.build_info()
 
                 
-                
-                print(f"Position: ({agent.x}, {agent.y})")
                 x, y = agent.find_neighbour()
-                print(f"Neighbour: ({x}, {y})")
-                print("transform: ", agent.layout_to_map(x, y))
+                # print(f"Neighbour: ({x}, {y})")
+                # print("transform: ", agent.layout_to_map(x, y))
                 end = agent.layout_to_map(x, y)
-                path = agent.find_path(end)[1:]
-                print(f"Path 1: {path}")
+                path = agent.find_path(end)
+                # print(f"Path 1: {path}")
                 agent.follow_path(path)
                 
-                print(f"Position: ({agent.x}, {agent.y})")
+                # print(f"Position: ({agent.x}, {agent.y})")
                 path = agent.A_star((agent.zone_start,2))
-                print(f"Path 2: {path}")
+                # print(f"Path 2: {path}")
                 agent.follow_path(path)
-                print(agent.nb_agent_expected)
-                print(f"Agent {agent.agent_id} is responsible for the zone {agent.zone_start} - {agent.zone_end}")
+                # print(agent.nb_agent_expected)
+                # print(f"Agent {agent.agent_id} is responsible for the zone {agent.zone_start} - {agent.zone_end}")
 
                 fork = agent.find_fork()
-                print(f"Fork: {fork}")
+                # print(f"Fork: {fork}")
 
                 for i in fork:
                     path = agent.A_star(i)
                     if agent.follow_path(path):
                         break
+            
+                agent.get_target()
                 
                 
             
