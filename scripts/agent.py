@@ -12,17 +12,17 @@ from threading import Thread
 import numpy as np
 from time import sleep
 
+list_dir = [UP, DOWN, LEFT, RIGHT]
+inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
+
 
 class Agent:
     """ Class that implements the behaviour of each agent based on their perception and communication with other agents """
     def __init__(self, server_ip):
         #TODO: DEINE YOUR ATTRIBUTES HERE
         self.mode = CLASSIQUE
+        self.prev_dir = []
 
-        
-        self.key_position = None
-        self.box_position = None
-        
         self.cell_vall = np.float64(0.0)
         #DO NOT TOUCH THE FOLLOWING INSTRUCTIONS
         self.network = Network(server_ip=server_ip)
@@ -69,8 +69,20 @@ class Agent:
 
             print("hellooo: ", msg)
             print("agent_id ", self.agent_id)
-            print("key ", self.key_position)
-            print("box", self.box_position)
+
+    def debug(self, msgs):
+        print("-------------------------------------")
+        print("               DEBUG")
+        print("       -----------------------")
+        for msg in msgs:
+            print(msg)
+        print("-------------------------------------")
+        with open(f'debug_{self.agent_id}.log', 'a') as f:
+            f.write("-------------------------------------\n")
+            for msg in msgs:
+                f.write(msg + "\n")
+            f.write("-------------------------------------\n")
+
     
 
     def wait_for_connected_agent(self):
@@ -89,14 +101,20 @@ class Agent:
         item_type = msg.get("Msg type" if is_broadcast else "type", None)
         owner = msg.get("owner", None)
         position = msg.get("position", (self.x, self.y)) if is_broadcast else (self.x, self.y)
+
         
-        if owner == self.agent_id:
-            if item_type == KEY_TYPE and self.key_position is None :
-                self.key_position = position
-                print("I have my key!")
-            elif item_type == BOX_TYPE and self.box_position is None:
-                self.box_position = position
-                print("I have my box!")
+        
+        
+        if item_type == KEY_TYPE and self.keys_positions[owner] is None :
+            self.keys_positions[owner] = position
+            print("I have my key!")
+        elif item_type == BOX_TYPE and self.boxes_positions[owner] is None:
+            self.boxes_positions[owner] = position
+            print("I have my box!")
+        
+        
+        # self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
+        #             , f"keys_positions: {self.keys_positions}", f"boxes_positions: {self.boxes_positions}"])
         
         if not is_broadcast:
             cmds = {"header": BROADCAST_MSG, "Msg type": item_type, "position": position, "owner": owner}
@@ -104,6 +122,9 @@ class Agent:
 
     #TODO: CREATE YOUR METHODS HERE...
 
+    def build_info(self):
+        self.keys_positions = [None for _ in range( self.nb_agent_expected)]
+        self.boxes_positions = [None for _ in range(self.nb_agent_expected)]
 
     def build_transformation(self):
         t = np.pi / 2
@@ -118,7 +139,7 @@ class Agent:
                        [0, 0, 0, 1]])
         
         self.transform =  np.dot(r1, r2)
-    
+
     def layout_to_map(self, x:int, y:int) -> tuple:
         tmp = np.dot(self.transform, np.array([x, y, 0, 1]))[:2]
 
@@ -179,16 +200,18 @@ class Agent:
 
         return path
 
-    def find_neighbour(self) -> tuple:
+    def find_neighbour(self, target = None) -> tuple:
+        if target is None:
+            target = (self.x, self.y)
+
         n, m = self.layout.shape
         min_dist = float("inf")
         closest_point = None
 
         for i in range(n):
             for j in range(m):
-                x, y = self.layout_to_map(i, j)
                 if self.layout[i][j] == 1:
-                    dist = abs(i - self.y) + abs(j - self.x)
+                    dist = abs(i - target[1]) + abs(j - target[0])
                     if dist < min_dist:
                         min_dist = dist
                         closest_point = (i, j)
@@ -197,32 +220,21 @@ class Agent:
 
         return closest_point
     
-
     def find_item(self):
         
 
         vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
 
-        list_dir = [UP, DOWN, LEFT, RIGHT]
-        inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
-
-
         while self.cell_vall != np.float64(1.0):
             
             for i in list_dir:
-                cmds = {"header": MOVE, "direction": i}
-                self.network.send(cmds)
-                sleep(1)
+                self.move(i)
                 vals[i] = self.cell_vall
                 if self.cell_vall == np.float64(1.0):
                     break
-                cmds = {"header": MOVE, "direction": inv_[i]}
-                self.network.send(cmds)
-                sleep(1)
+                self.move(inv_[i])
             
             direction = 0
-            
-            sleep(1)
             
             if self.cell_vall == np.float64(1.0):
                 self.network.send({"header": GET_ITEM_OWNER})
@@ -259,6 +271,7 @@ class Agent:
                 
 
             self.move(direction)
+            self.prev_dir.append(direction)
             self.network.send({"header": GET_ITEM_OWNER})
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
 
@@ -323,20 +336,26 @@ class Agent:
         #         self.network.send(cmds)
         #         prev_val.append(self.msg["cell_val"])
 
-        
-
-
-
-
     def check_mode(self):
-        if self.msg["cell_val"] in [0.3, 0.6, 0.25, 0.5]:
+        def is_near(x, y, positions):
+            """Vérifie si (x, y) est proche de l'une des positions (±2)."""
+            return any(
+                pos is not None and abs(x - pos[0]) <= 2 and abs(y - pos[1]) <= 2 
+                for pos in positions
+            )
+
+        cell_val_condition = self.msg["cell_val"] in [0.3, 0.6, 0.25, 0.5]
+        near_keys = is_near(self.x, self.y, self.keys_positions)
+        near_boxes = is_near(self.x, self.y, self.boxes_positions)
+
+        if cell_val_condition and not (near_keys or near_boxes):
+            
             if self.mode == CLASSIQUE:
                 self.mode = RESSEARCHANDDESTROY
         else:
             if self.mode == RESSEARCHANDDESTROY:
                 self.mode = CLASSIQUE
 
-    
     def move(self, direction:int):
         
         cmds = {"header": MOVE, "direction": direction}
@@ -344,6 +363,11 @@ class Agent:
         self.network.send(cmds)
         sleep(0.5)
 
+    def back_on_track(self):
+        for i in self.prev_dir:
+            self.move(inv_[i])
+        self.prev_dir = []
+    
     def follow_path(self, path):
 
         x1, y1 = self.x, self.y
@@ -375,8 +399,12 @@ class Agent:
 
             if self.mode == RESSEARCHANDDESTROY:
                 self.find_item()
-                return
-
+                self.back_on_track()
+            
+            elif not self.mode == GOTARGET:
+                if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
+                    self.debug([f"Swithing to mode: {self.mode}"])
+                    return True    
 
     def A_star(self, end) -> list:
         start = (self.x, self.y)
@@ -420,7 +448,10 @@ class Agent:
         
         return layout_path
 
- 
+    def find_target(self):
+        pass
+
+
 if __name__ == "__main__":
     from random import randint
     import argparse
@@ -446,6 +477,9 @@ if __name__ == "__main__":
                 agent.build_transformation()
                 agent.build_layout()
                 agent.attribute()
+                agent.build_info()
+
+                
                 
                 print(f"Position: ({agent.x}, {agent.y})")
                 x, y = agent.find_neighbour()
@@ -468,7 +502,10 @@ if __name__ == "__main__":
 
                 for i in fork:
                     path = agent.A_star(i)
-                    agent.follow_path(path)
+                    if agent.follow_path(path):
+                        break
+                
+                
             
             else:
                 agent.network.send(cmds)
