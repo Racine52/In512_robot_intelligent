@@ -58,7 +58,6 @@ In this example for server:
 - The program will use **Map 2**.
 - The map will include **1 additional obstacle**.
 
-
 2. Open nb other terminals and run, **for each of them**
 
 ```bash
@@ -78,3 +77,9 @@ This project was created and maintained by:
 - Tristan MAILLE
 - Titouan MILLET
 - Louan VANTHORRE
+
+---
+
+## Rapport
+
+[IN512-Rapport-Maille_Millet_Vanthorre.pdf](https://github.com/Racine52/In512_robot_intelligent/blob/main/IN512-Rapport-Maille_Millet_Vanthorre.pdf)
