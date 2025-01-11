@@ -60,8 +60,10 @@ class Game:
         
         for wall in self.wall:
             for dx, dy in self.moves:
-                if dx!= 0 or dy!= 0 and (self.map_real[item.y + dy, item.x + dx]):
+                if dx!= 0 or dy!= 0 and (self.map_real[item.y + dy, item.x + dx]!= 2):
                     self.add_val(wall.x + dx, wall.y + dy, wall.neighbour_percent)
+                else:
+                    self.add_val(wall.x, wall.y, 2)
     
     def add_val(self, x, y, val):
         """ Add a value if x and y coordinates are in the range [map_w; map_h] """

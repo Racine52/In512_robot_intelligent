@@ -55,7 +55,7 @@ class Agent:
             if msg["header"] == MOVE:
                 self.x, self.y =  msg["x"], msg["y"]
                 self.cell_vall = msg["cell_val"]
-                #self.check_mode()
+                self.check_mode()
                 # print(self.x, self.y)
             elif msg["header"] == GET_NB_AGENTS:
                 self.nb_agent_expected = msg["nb_agents"]
@@ -142,6 +142,11 @@ class Agent:
 
     def layout_to_map(self, x:int, y:int) -> tuple:
         tmp = np.dot(self.transform, np.array([x, y, 0, 1]))[:2]
+
+        return int(tmp[0]), int(tmp[1])
+
+    def map_to_layout(self, x:int, y:int) -> tuple:
+        tmp = np.dot(np.linalg.inv(self.transform), np.array([x, y, 0, 1]))[:2]
 
         return int(tmp[0]), int(tmp[1])
 
@@ -237,7 +242,7 @@ class Agent:
             direction = 0
             
             if self.cell_vall == np.float64(1.0):
-                self.network.send({"header": GET_ITEM_OWNER})
+                #self.network.send({"header": GET_ITEM_OWNER})
                 # print(f"Item found at position: ({self.x}, {self.y})")
                 return
             elif (vals[UP] == vals[RIGHT]) and (vals[UP] > vals[LEFT]) and (vals[UP] > vals[DOWN]):
@@ -274,8 +279,6 @@ class Agent:
             self.prev_dir.append(direction)
             self.network.send({"header": GET_ITEM_OWNER})
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
-
-            
 
         # print(f"Item found at position: ({self.x}, {self.y})")
         return
@@ -336,6 +339,55 @@ class Agent:
         #         self.network.send(cmds)
         #         prev_val.append(self.msg["cell_val"])
 
+    def update_dodged_layout(self, x, y, value):
+        self.layout[y][x] = value
+        
+        
+    def dodge_wall(self):
+        pos_init = (self.x, self.y)
+        path = [pos_init]
+        
+        self.update_dodged_layout(self.x, self.y+1, 0)
+        
+        def up_right(path):
+            self.move(UP)
+            self.update_dodged_layout(self.x, self.y, 1)
+            path.append((self.x, self.y))
+            
+            self.move(RIGHT)
+            self.update_dodged_layout(self.x, self.y, 1)
+            path.append((self.x, self.y))
+            
+            return path
+        
+        path = up_right(path)
+
+        while pos_init[0] != self.x:
+            if self.cell_vall == 0.35:
+                self.update_dodged_layout(self.x, self.y, 0)
+                path = up_right(path)
+            
+            else :
+                
+                self.move(DOWN)
+                self.update_dodged_layout(self.x, self.y, 1)
+                path.append((self.x, self.y))
+                
+                next_pos = (self.x-1, self.y)
+                
+                if next_pos not in path:
+                    self.move(LEFT)
+                    self.update_dodged_layout(self.x, self.y, 1)    
+                    if self.cell_vall == 0.35:
+                        self.update_dodged_layout(self.x, self.y, 0)
+                        self.move(RIGHT) 
+                    else :
+                        while pos_init[0] != self.x:  
+                            self.move(LEFT)
+                            self.update_dodged_layout(self.x, self.y, 1) 
+        
+        self.update_layout() 
+    
     def check_mode(self):
         if self.mode == GOTARGET: 
             return
@@ -350,13 +402,16 @@ class Agent:
         cell_val_condition = self.msg["cell_val"] in [0.3, 0.6, 0.25, 0.5]
         near_keys = is_near(self.x, self.y, self.keys_positions)
         near_boxes = is_near(self.x, self.y, self.boxes_positions)
-                  
-        if cell_val_condition and not (near_keys or near_boxes):
+         
+        if  self.msg["cell_val"] == 0.35 :
+            if self.mode != DODGEWALL:
+                self.mode = DODGEWALL         
+        elif cell_val_condition and not (near_keys or near_boxes):
             
-            if self.mode == CLASSIQUE:
+            if self.mode != RESSEARCHANDDESTROY:
                 self.mode = RESSEARCHANDDESTROY
         else:
-            if self.mode == RESSEARCHANDDESTROY:
+            if self.mode != CLASSIQUE:
                 self.mode = CLASSIQUE
 
     def move(self, direction:int):
@@ -403,6 +458,10 @@ class Agent:
             if self.mode == RESSEARCHANDDESTROY:
                 self.find_item()
                 self.back_on_track()
+            
+            elif self.mode == DODGEWALL:
+                self.dodge_wall()
+                return False
 
             elif not self.mode == GOTARGET:
                 if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
@@ -410,7 +469,6 @@ class Agent:
                     # self.debug([f'MODE {self.mode}'])
                     return True
             
-              
 
     def A_star(self, end) -> list:
         start = (self.x, self.y)
@@ -478,15 +536,6 @@ class Agent:
         self.follow_path(self.A_star(box_neighbour) + self.find_path(box_pos, box_neighbour))
 
 
-    
-
-
-
-
-        
-        
-
-
 if __name__ == "__main__":
     from random import randint
     import argparse
@@ -495,6 +544,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     agent = Agent(args.server_ip)
+   
     
     try:    #Manual control test0
         while True:
@@ -513,6 +563,7 @@ if __name__ == "__main__":
                 agent.build_layout()
                 agent.attribute()
                 agent.build_info()
+                
 
                 
                 x, y = agent.find_neighbour()
@@ -537,6 +588,10 @@ if __name__ == "__main__":
                     path = agent.A_star(i)
                     if agent.follow_path(path):
                         break
+                    else :
+                        path = agent.A_star(i)
+                        agent.follow_path(path)
+                        
             
                 agent.get_target()
                 
