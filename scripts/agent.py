@@ -55,7 +55,7 @@ class Agent:
             if msg["header"] == MOVE:
                 self.x, self.y =  msg["x"], msg["y"]
                 self.cell_vall = msg["cell_val"]
-                self.check_mode()
+                #self.check_mode()
                 # print(self.x, self.y)
             elif msg["header"] == GET_NB_AGENTS:
                 self.nb_agent_expected = msg["nb_agents"]

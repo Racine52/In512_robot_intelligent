@@ -15,8 +15,9 @@ from time import sleep
 
 class Game:
     """ Handle the whole game """
-    def __init__(self, nb_agents, map_id):
+    def __init__(self, nb_agents, map_id, nb_wall):
         self.nb_agents = nb_agents
+        self.nb_wall = nb_wall
         self.nb_ready = 0
         self.agent_id = 0
         self.moves = [(0, 0), (-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
@@ -32,12 +33,16 @@ class Game:
         with open(json_filename, "r") as json_file:
             self.map_cfg = json.load(json_file)[f"map_{map_id}"]        
         
-        self.agents, self.keys, self.boxes = [], [], []
+        self.agents, self.keys, self.boxes, self.wall = [], [], [], []
         for i in range(self.nb_agents):
             self.agents.append(Agent(i+1, self.map_cfg[f"agent_{i+1}"]["x"], self.map_cfg[f"agent_{i+1}"]["y"], self.map_cfg[f"agent_{i+1}"]["color"]))
             self.keys.append(Key(self.map_cfg[f"key_{i+1}"]["x"], self.map_cfg[f"key_{i+1}"]["y"]))
             self.boxes.append(Box(self.map_cfg[f"box_{i+1}"]["x"], self.map_cfg[f"box_{i+1}"]["y"]))
             self.agent_paths[i] = [(self.agents[i].x, self.agents[i].y)]
+        
+        for i in range(self.nb_wall):
+            for j in range(5):
+                self.wall.append(Wall(self.map_cfg[f"wall_{i+1}_{j+1}"]["x"], self.map_cfg[f"wall_{i+1}_{j+1}"]["y"]))
         
         self.map_w, self.map_h = self.map_cfg["width"], self.map_cfg["height"]
         self.map_real = np.zeros(shape=(self.map_h, self.map_w))
@@ -52,7 +57,11 @@ class Game:
                         self.add_val(item.x + dx, item.y + dy, item.neighbour_percent/(i+1))
                     else:
                         self.add_val(item.x, item.y, 1)
-
+        
+        for wall in self.wall:
+            for dx, dy in self.moves:
+                if dx!= 0 or dy!= 0 and (self.map_real[item.y + dy, item.x + dx]):
+                    self.add_val(wall.x + dx, wall.y + dy, wall.neighbour_percent)
     
     def add_val(self, x, y, val):
         """ Add a value if x and y coordinates are in the range [map_w; map_h] """
@@ -128,3 +137,7 @@ class Key(Item):
 class Box(Item):
     def __init__(self, x, y):
         Item.__init__(self, x, y, BOX_NEIGHBOUR_PERCENTAGE, "box")
+        
+class Wall(Item):
+    def __init__(self, x, y):
+        Item.__init__(self, x, y, WALL_NEIGHBOUR_PERCENTAGE, "wall")
