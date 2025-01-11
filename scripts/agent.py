@@ -45,7 +45,7 @@ class Agent:
         # print("hello")
         self.wait_for_connected_agent()
 
-        
+
     def msg_cb(self): 
         """ Method used to handle incoming messages """
         while self.running:

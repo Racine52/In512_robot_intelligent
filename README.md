@@ -1,72 +1,80 @@
-# IN512_Project
+# Distributed Intelligence for Robots
 
-## Install Pygame
-Pygame is a python package used to generate the simulated environments of this project.
-If not yet installed, open a terminal and run the following instruction:
+This project implements a distributed intelligence system for robots tasked with solving a sequence of challenges:
+
+1. Find their assigned key.
+2. Use the key to unlock their assigned box.
+
+Each robot operates independently, using the same algorithm, but without sharing memory. The system is configurable, allowing adjustments to the number of robots, the map layout, and the number of obstacles.
+
+---
+
+## Features
+
+- **Multiple Robots**: Operate simultaneously and independently.
+- **Configurable Maps**: Choose from different layouts and levels of complexity.
+- **Customizable Parameters**: Easily adjust the number of robots, map design, and obstacles.
+
+---
+
+## Installation
+
+To download and set up the project, follow these steps:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/Racine52/In512_robot_intelligent.git
+   ```
+2. Navigate to the project directory:
+
+   ```bash
+   cd In512_robot_intelligentcd your-repo-name
+   ```
+3. Install the required dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+---
+
+## Usage
+
+1. Run `./scriptserver.py`, which accepts the following parameters:
+
+- `-nb`: Number of robots (1-4).
+- `-mi`: Map ID (1-3).
+- `-nw`: Number of walls/obstacles (0-3).
+
 ```bash
-pip install pygame  #On Windows
-pip3 install pygame #On MAC OS
+python ./scripts/server.py -nb 3 -mi 2 -nw 1 #On windows
+python ./scripts/server.py -nb 3 -mi 2 -nw 1 #On Mac OS
 ```
 
-If you have any difficulty with the installation, please call your teacher.
+In this example for server:
 
-## Git
-### Install Git
-Git is a tool used for source code management. You can use it to create your own version of the project and share it with your group members. GitHub will be used to host your repository.</br>
-To check if git is already installed on your computer, open a terminal and enter: **git**. If an error appears, you have to install it using [this link](https://git-scm.com/downloads).
+- **3 robots** will be active.
+- The program will use **Map 2**.
+- The map will include **1 additional obstacle**.
 
-### Configure git for GitHub
-If you planned to create your own GitHub repository for this project, [create a GitHub account](https://github.com/signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F&source=header-home) if you don't already have one.</br>
-Once the account is created, open a terminal to enter details about your GitHub account so that git will be able to manipulate your future projects:
+
+2. Open nb other terminals and run, **for each of them**
+
 ```bash
-git config --global user.name "Your GitHub username"
-git config --global user.email "The email address used when you created your GitHub account"
-```
 
-## Clone the repository
-To have a local version of this GitHub repository, you have to clone it. Run the following instructions in a terminal:
-<!-- ### Clone it with VS Code
-1. Copy the url of the repository
-2. On VS Code, press **Ctrl + Shift + P** (on Windows) or **Cmd + Shift + P** (on MAC OS) to open the command palette.
-3. Press **clone** then click on **Gt:clone**.
-4. Paste the url copied from step 1 then press 'Enter'.
-5. In the pop-up window, specify where you want to clone the project.
-
-### Clone it with command lines
-Another solution is to open a terminal and run: -->
-```bash
-cd your_desired_path
-git clone https://github.com/AybukeOzturk/In512_Project_Student
-```
-
-## Instructions to run the scripts
-### Run the application with 2 agents, locally
-1. Run the server
-```bash
-python scripts/server.py -nb 2 #On windows
-python3 scripts/server.py -nb 2 #On MAC OS
-```
-
-2. Open two other terminals and run, **for each of them**, the following instruction:
-```bash
 python scripts/agent.py #On windows
-python3 scripts/agent.py #On MAC OS
+python3 scripts/agent.py #On Mac OS
 ```
 
-Once both terminals run the agent script, the environment should appear.
+Once each terminals run the agent script, the environment should appear on the computer that hosts the server.
 
+---
 
-### Run the application with 2 agents on several computers
-1. Run the server on one of the computers by specifing its ip address (for instance if the computer's ip address is 10.9.157.250):
-```bash
-python scripts/server.py -nb 2 -i 10.9.157.250 #On windows
-python3 scripts/server.py -nb 2 -i 10.9.157.250 #On MAC OS
-```
+## Contributors
 
-2. On each computer, run one of the agents as follow:
-```bash
-python scripts/agent.py -i 10.9.157.250 #On windows
-python3 scripts/agent.py -i 10.9.157.250 #On MAC OS
-```
+This project was created and maintained by:
 
-Once both terminals run the agent script, the environment should appear on the computer that hosts the server.
+- Tristan MAILLE
+- Titouan MILLET
+- Louan VANTHORRE
