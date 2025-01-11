@@ -40,6 +40,9 @@ class Agent:
         self.layout = np.zeros((self.w, self.h), dtype=int).T
         Thread(target=self.msg_cb, daemon=True).start()
         self.wait_for_connected_agent()
+        sleep(3)
+        self.build_info()
+        self.debug(['keys_positions', str(self.keys_positions), 'boxes_positions', str(self.boxes_positions)])
 
 
         
@@ -74,7 +77,7 @@ class Agent:
         for msg in msgs:
             print(msg)
         print("-------------------------------------")
-        with open(f'debug_{self.agent_id}.log', 'wa') as f:
+        with open(f'debug_{self.agent_id}.log', 'a') as f:
             f.write("-------------------------------------\n")
             for msg in msgs:
                 f.write(msg + "\n")
@@ -475,12 +478,15 @@ class Agent:
         self.follow_path(self.A_star(box_neighbour) + self.find_path(box_pos, box_neighbour))
 
 
-    
+    def wait(self):
+        while True:
+            self.move(STAND)
+            sleep(0.5)
+            if self.mode == GOTARGET:
+                break
 
 
 
-
-        
         
 
 
@@ -492,6 +498,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     agent = Agent(args.server_ip)
+    
     
     try:    #Manual control test0
         while True:
@@ -511,7 +518,6 @@ if __name__ == "__main__":
                 agent.build_transformation()
                 agent.build_layout()
                 agent.attribute()
-                agent.build_info()
 
                 
                 x, y = agent.find_neighbour()
@@ -537,6 +543,10 @@ if __name__ == "__main__":
                     path = agent.A_star(i)
                     if agent.follow_path(path):
                         break
+                
+                agent.debug(['Wait'])
+                agent.wait()
+                agent.debug(['Stop Wait'])
             
                 agent.get_target()
                 
