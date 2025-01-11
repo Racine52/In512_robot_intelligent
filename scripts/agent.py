@@ -12,6 +12,7 @@ from threading import Thread
 import numpy as np
 from time import sleep
 
+from fonction import show_menu
 list_dir = [UP, DOWN, LEFT, RIGHT]
 inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
 
@@ -37,13 +38,9 @@ class Agent:
         self.w, self.h = env_conf["w"], env_conf["h"]   #environment dimensions
 
         self.layout = np.zeros((self.w, self.h), dtype=int).T
-
-
-        cell_val = env_conf["cell_val"] #value of the cell the agent is located in
-        # print(cell_val)
         Thread(target=self.msg_cb, daemon=True).start()
-        # print("hello")
         self.wait_for_connected_agent()
+
 
         
     def msg_cb(self): 
@@ -77,12 +74,12 @@ class Agent:
         for msg in msgs:
             print(msg)
         print("-------------------------------------")
-        with open(f'debug_{self.agent_id}.log', 'a') as f:
+        with open(f'debug_{self.agent_id}.log', 'wa') as f:
             f.write("-------------------------------------\n")
             for msg in msgs:
                 f.write(msg + "\n")
             f.write("-------------------------------------\n")
-
+    
     
 
     def wait_for_connected_agent(self):
@@ -498,7 +495,9 @@ if __name__ == "__main__":
     
     try:    #Manual control test0
         while True:
-            cmds = {"header": int(input("0 <-> Broadcast msg\n1 <-> Get data\n2 <-> Move\n3 <-> Get nb connected agents\n4 <-> Get nb agents\n5 <-> Get item owner\n"))}
+            # cmds = {"header": int(input("0 <-> Broadcast msg\n1 <-> Get data\n2 <-> Move\n3 <-> Get nb connected agents\n4 <-> Get nb agents\n5 <-> Get item owner\n"))}
+            sleep(0.5)
+            cmds = {"header": show_menu()}
             if cmds["header"] == BROADCAST_MSG:
                 cmds["Msg type"] = int(input("1 <-> Key discovered\n2 <-> Box discovered\n3 <-> Completed\n"))
                 cmds["position"] = (agent.x, agent.y)
