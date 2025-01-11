@@ -21,7 +21,7 @@ class Agent:
     """ Class that implements the behaviour of each agent based on their perception and communication with other agents """
     def __init__(self, server_ip):
         #TODO: DEINE YOUR ATTRIBUTES HERE
-        self.mode = CLASSIQUE
+        self.mode = GOONTRACK
         self.prev_dir = []
 
         self.cell_vall = np.float64(0.0)
@@ -334,7 +334,7 @@ class Agent:
         #         prev_val.append(self.msg["cell_val"])
 
     def check_mode(self):
-        if self.mode == GOTARGET: 
+        if self.mode == GOTARGET or self.mode == GOONTRACK: 
             return
         
         def is_near(x, y, positions):
@@ -529,6 +529,7 @@ if __name__ == "__main__":
                 # print(agent.nb_agent_expected)
                 # print(f"Agent {agent.agent_id} is responsible for the zone {agent.zone_start} - {agent.zone_end}")
 
+                agent.mode = CLASSIQUE
                 fork = agent.find_fork()
                 # print(f"Fork: {fork}")
 
