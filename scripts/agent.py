@@ -12,7 +12,7 @@ from threading import Thread
 import numpy as np
 from time import sleep
 
-from fonction import show_menu
+from menu import show_menu
 list_dir = [UP, DOWN, LEFT, RIGHT]
 inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
 
@@ -113,8 +113,8 @@ class Agent:
             # print("I have my box!")
         
         
-        # self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
-        #             , f"keys_positions: {self.keys_positions}", f"boxes_positions: {self.boxes_positions}"])
+        self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
+                    , f"keys_positions: {self.keys_positions}", f"boxes_positions: {self.boxes_positions}"])
         
         if not is_broadcast:
             cmds = {"header": BROADCAST_MSG, "Msg type": item_type, "position": position, "owner": owner}
@@ -277,7 +277,8 @@ class Agent:
 
             self.move(direction)
             self.prev_dir.append(direction)
-            self.network.send({"header": GET_ITEM_OWNER})
+            if self.cell_vall == np.float64(1.0): self.network.send({"header": GET_ITEM_OWNER})
+            
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
         return
 
@@ -359,9 +360,15 @@ class Agent:
             
             if self.mode != RESSEARCHANDDESTROY:
                 self.mode = RESSEARCHANDDESTROY
+
         else:
             if self.mode != CLASSIQUE:
                 self.mode = CLASSIQUE
+        
+        # if not self.mode == GOTARGET:
+        #         if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
+        #             self.mode = GOTARGET
+        #             self.debug([f'MODE {self.mode}'])
 
     def move(self, direction:int):
         
@@ -415,7 +422,7 @@ class Agent:
             elif not self.mode == GOTARGET:
                 if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
                     self.mode = GOTARGET
-                    # self.debug([f'MODE {self.mode}'])
+                    self.debug([f'MODE {self.mode}'])
                     return True
             
 
@@ -458,6 +465,7 @@ class Agent:
         for i in range(self.zone_start, r ):
             if self.layout[self.h - 3, i] == 1:
                 layout_path.append((i, self.h - 3))
+                layout_path.append((i, 2))
         
         return layout_path
 
@@ -490,8 +498,7 @@ class Agent:
 
     def wait(self):
         while True:
-            self.move(STAND)
-            sleep(0.5)
+            self.follow_path([(self.x, self.y)])
             if self.mode == GOTARGET:
                 break
 
@@ -509,6 +516,7 @@ if __name__ == "__main__":
     try:    #Manual control test0
         while True:
             # cmds = {"header": int(input("0 <-> Broadcast msg\n1 <-> Get data\n2 <-> Move\n3 <-> Get nb connected agents\n4 <-> Get nb agents\n5 <-> Get item owner\n"))}
+            
             sleep(0.5)
             cmds = {"header": show_menu()}
             if cmds["header"] == BROADCAST_MSG:
@@ -524,7 +532,6 @@ if __name__ == "__main__":
                 agent.build_transformation()
                 agent.build_layout()
                 agent.attribute()
-                agent.build_info()
                 
                 
                 x, y = agent.find_neighbour()
@@ -557,6 +564,7 @@ if __name__ == "__main__":
                 agent.debug(['Wait'])
                 agent.wait()
                 agent.debug(['Stop Wait'])
+
                 agent.get_target()
                 
                 
