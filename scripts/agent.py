@@ -12,6 +12,7 @@ from threading import Thread
 import numpy as np
 from time import sleep
 
+from menu import show_menu
 list_dir = [UP, DOWN, LEFT, RIGHT]
 inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
 
@@ -20,7 +21,7 @@ class Agent:
     """ Class that implements the behaviour of each agent based on their perception and communication with other agents """
     def __init__(self, server_ip):
         #TODO: DEINE YOUR ATTRIBUTES HERE
-        self.mode = CLASSIQUE
+        self.mode = GOONTRACK
         self.prev_dir = []
 
         self.cell_vall = np.float64(0.0)
@@ -37,13 +38,12 @@ class Agent:
         self.w, self.h = env_conf["w"], env_conf["h"]   #environment dimensions
 
         self.layout = np.zeros((self.w, self.h), dtype=int).T
-
-
-        cell_val = env_conf["cell_val"] #value of the cell the agent is located in
-        # print(cell_val)
         Thread(target=self.msg_cb, daemon=True).start()
-        # print("hello")
         self.wait_for_connected_agent()
+        sleep(3)
+        self.build_info()
+        self.debug(['keys_positions', str(self.keys_positions), 'boxes_positions', str(self.boxes_positions)])
+
 
 
     def msg_cb(self): 
@@ -82,7 +82,7 @@ class Agent:
             for msg in msgs:
                 f.write(msg + "\n")
             f.write("-------------------------------------\n")
-
+    
     
 
     def wait_for_connected_agent(self):
@@ -113,8 +113,8 @@ class Agent:
             # print("I have my box!")
         
         
-        # self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
-        #             , f"keys_positions: {self.keys_positions}", f"boxes_positions: {self.boxes_positions}"])
+        self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
+                    , f"keys_positions: {self.keys_positions}", f"boxes_positions: {self.boxes_positions}"])
         
         if not is_broadcast:
             cmds = {"header": BROADCAST_MSG, "Msg type": item_type, "position": position, "owner": owner}
@@ -277,7 +277,8 @@ class Agent:
 
             self.move(direction)
             self.prev_dir.append(direction)
-            self.network.send({"header": GET_ITEM_OWNER})
+            if self.cell_vall == np.float64(1.0): self.network.send({"header": GET_ITEM_OWNER})
+            
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
         return
 
@@ -333,7 +334,8 @@ class Agent:
                     self.mode = GOTARGET
     
     def check_mode(self):
-        if self.mode == GOTARGET: 
+
+        if self.mode == GOTARGET or self.mode == GOONTRACK: 
             if  self.cell_vall == 0.35 :
                 if self.mode != DODGEWALL:
                     self.mode = DODGEWALL
@@ -358,9 +360,15 @@ class Agent:
             
             if self.mode != RESSEARCHANDDESTROY:
                 self.mode = RESSEARCHANDDESTROY
+
         else:
             if self.mode != CLASSIQUE:
                 self.mode = CLASSIQUE
+        
+        # if not self.mode == GOTARGET:
+        #         if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
+        #             self.mode = GOTARGET
+        #             self.debug([f'MODE {self.mode}'])
 
     def move(self, direction:int):
         
@@ -414,7 +422,7 @@ class Agent:
             elif not self.mode == GOTARGET:
                 if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
                     self.mode = GOTARGET
-                    # self.debug([f'MODE {self.mode}'])
+                    self.debug([f'MODE {self.mode}'])
                     return True
             
 
@@ -457,6 +465,7 @@ class Agent:
         for i in range(self.zone_start, r ):
             if self.layout[self.h - 3, i] == 1:
                 layout_path.append((i, self.h - 3))
+                layout_path.append((i, 2))
         
         return layout_path
 
@@ -484,10 +493,14 @@ class Agent:
         agent_neighbour = self.layout_to_map(agent_neighbour[0], agent_neighbour[1])
         
         self.follow_path(self.find_path(agent_neighbour))
-        
         if not self.follow_path(box_path):
             self.follow_path(self.A_star(box_neighbour) + self.find_path(box_pos, box_neighbour))
 
+    def wait(self):
+        while True:
+            self.follow_path([(self.x, self.y)])
+            if self.mode == GOTARGET:
+                break
 
 if __name__ == "__main__":
     from random import randint
@@ -499,9 +512,13 @@ if __name__ == "__main__":
     agent = Agent(args.server_ip)
    
     
+    
     try:    #Manual control test0
         while True:
-            cmds = {"header": int(input("0 <-> Broadcast msg\n1 <-> Get data\n2 <-> Move\n3 <-> Get nb connected agents\n4 <-> Get nb agents\n5 <-> Get item owner\n"))}
+            # cmds = {"header": int(input("0 <-> Broadcast msg\n1 <-> Get data\n2 <-> Move\n3 <-> Get nb connected agents\n4 <-> Get nb agents\n5 <-> Get item owner\n"))}
+            
+            sleep(0.5)
+            cmds = {"header": show_menu()}
             if cmds["header"] == BROADCAST_MSG:
                 cmds["Msg type"] = int(input("1 <-> Key discovered\n2 <-> Box discovered\n3 <-> Completed\n"))
                 cmds["position"] = (agent.x, agent.y)
@@ -515,9 +532,7 @@ if __name__ == "__main__":
                 agent.build_transformation()
                 agent.build_layout()
                 agent.attribute()
-                agent.build_info()
                 
-
                 
                 x, y = agent.find_neighbour()
                 # print(f"Neighbour: ({x}, {y})")
@@ -534,6 +549,7 @@ if __name__ == "__main__":
                 # print(agent.nb_agent_expected)
                 # print(f"Agent {agent.agent_id} is responsible for the zone {agent.zone_start} - {agent.zone_end}")
 
+                agent.mode = CLASSIQUE
                 fork = agent.find_fork()
                 # print(f"Fork: {fork}")
 
@@ -544,8 +560,11 @@ if __name__ == "__main__":
                     else :
                         path = agent.A_star(i)
                         agent.follow_path(path)
-                        
-            
+                
+                agent.debug(['Wait'])
+                agent.wait()
+                agent.debug(['Stop Wait'])
+
                 agent.get_target()
                 
                 
