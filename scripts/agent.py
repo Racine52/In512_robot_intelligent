@@ -12,7 +12,7 @@ from threading import Thread
 import numpy as np
 from time import sleep
 
-from menu import show_menu
+from FRED import show_menu
 list_dir = [UP, DOWN, LEFT, RIGHT]
 inv_ = {UP: DOWN, DOWN: UP, LEFT: RIGHT, RIGHT: LEFT, UP_LEFT: DOWN_RIGHT, UP_RIGHT: DOWN_LEFT, DOWN_LEFT: UP_RIGHT, DOWN_RIGHT: UP_LEFT}
 
