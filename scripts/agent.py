@@ -71,6 +71,19 @@ class Agent:
             print("agent_id ", self.agent_id)
 
     def debug(self, msgs):
+        """
+        Prints debug messages to the console and to a log file.
+
+        Parameters:
+        - msgs (list of str): A list of debug messages to be printed.
+
+        Returns:
+        - None
+
+        The debug messages are printed with a header and footer for clarity.
+        Each message is printed on a new line.
+        The debug messages are also written to a log file named 'debug_{self.agent_id}.log'.
+        """
         print("-------------------------------------")
         print("               DEBUG")
         print("       -----------------------")
@@ -86,6 +99,16 @@ class Agent:
     
 
     def wait_for_connected_agent(self):
+        """
+        This function sends a request to the server to get the number of connected agents.
+        It then waits until the number of expected agents (self.nb_agent_expected) is equal to the number of connected agents.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         self.network.send({"header": GET_NB_AGENTS})
         check_conn_agent = True
         while check_conn_agent:
@@ -94,28 +117,39 @@ class Agent:
                 check_conn_agent = False
                 
     def process_item(self, msg, is_broadcast=False):
-        """ Process the item received from the server """
+        """
+        Process the item received from the server.
+
+        Parameters:
+        msg (dict): The message received from the server. It should contain the following keys:
+            - "Msg type" or "type" (int): The type of the item.
+            - "owner" (int): The owner of the item.
+            - "position" (tuple): The position of the item.
+
+        is_broadcast (bool): A flag indicating whether the message is a broadcast message.
+
+        Returns:
+        None
+        """
         print('Processing item...')
-        
-        # Récupération correcte du type d'item en fonction du contexte
+
+        # Retrieve the correct item type based on the context
         item_type = msg.get("Msg type" if is_broadcast else "type", None)
         owner = msg.get("owner", None)
         position = msg.get("position", (self.x, self.y)) if is_broadcast else (self.x, self.y)
 
-        
-        
-        
+
         if item_type == KEY_TYPE and self.keys_positions[owner] is None :
             self.keys_positions[owner] = position
             # print("I have my key!")
         elif item_type == BOX_TYPE and self.boxes_positions[owner] is None:
             self.boxes_positions[owner] = position
             # print("I have my box!")
-        
-        
+
+
         self.debug([f"item_type: {item_type}" ,f"owner: {owner}", f"position: {position}"
                     , f"keys_positions: {self.keys_positions}", f"boxes_positions: {self.boxes_positions}"])
-        
+
         if not is_broadcast:
             cmds = {"header": BROADCAST_MSG, "Msg type": item_type, "position": position, "owner": owner}
             agent.network.send(cmds)
@@ -123,10 +157,34 @@ class Agent:
     #TODO: CREATE YOUR METHODS HERE...
 
     def build_info(self):
+        """
+        This function initializes the positions of keys and boxes for all agents.
+        It initializes the keys_positions and boxes_positions lists with None values, 
+        representing the unknown positions of keys and boxes for each agent.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         self.keys_positions = [None for _ in range( self.nb_agent_expected)]
         self.boxes_positions = [None for _ in range(self.nb_agent_expected)]
 
     def build_transformation(self):
+        """
+        This function builds a transformation matrix for mapping the agent's position in the layout.
+
+        The transformation matrix is a 4x4 numpy array that represents a rotation and translation.
+        The rotation is performed first by pi/2 radians (90 degrees) around the y-axis, 
+        followed by a rotation of pi radians (180 degrees) around the x-axis.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         t = np.pi / 2
         r1 = np.array([[np.cos(t), - np.sin(t), 0, 0],
                        [np.sin(t), np.cos(t), 1, 0], 
@@ -137,48 +195,111 @@ class Agent:
                        [0, np.cos(t), -np.sin(t), 0], 
                        [0, np.sin(t), np.cos(t), 0], 
                        [0, 0, 0, 1]])
-        
+
         self.transform =  np.dot(r1, r2)
 
-    def layout_to_map(self, x:int, y:int) -> tuple:
+    def layout_to_map(self, x: int, y: int) -> tuple:
+        """
+        Converts a point from the layout coordinate system to the map coordinate system.
+
+        Parameters:
+        x (int): The x-coordinate in the layout coordinate system.
+        y (int): The y-coordinate in the layout coordinate system.
+
+        Returns:
+        tuple: A tuple containing the converted x and y coordinates in the map coordinate system.
+        """
         tmp = np.dot(self.transform, np.array([x, y, 0, 1]))[:2]
 
         return int(tmp[0]), int(tmp[1])
 
     def map_to_layout(self, x:int, y:int) -> tuple:
+        """
+        Converts the given coordinates from the map to the layout.
+
+        Parameters:
+        x (int): The x-coordinate on the map.
+        y (int): The y-coordinate on the map.
+
+        Returns:
+        tuple: A tuple containing the corresponding x and y coordinates on the layout.
+        """
         tmp = np.dot(np.linalg.inv(self.transform), np.array([x, y, 0, 1]))[:2]
 
         return int(tmp[0]), int(tmp[1])
 
-    def update_layout(self):
+    def print_layout(self):
+        """
+        Prints the current state of the agent's layout to a text file.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+
+        The layout is printed row by row, with each cell separated by a space.
+        The layout is saved in a file named "layout_{self.agent_id}.txt".
+        """
         with open(f"layout_{self.agent_id}.txt", "w") as f:
                 for row in self.layout:
-                    f.write(" ".join(map(str, row)) + "\n") 
+                    f.write(" ".join(map(str, row)) + "\n")
 
     def build_layout(self):
-        self.update_layout()
-        if self.w >= self.h:
+        """
+        This function builds the layout of the environment for the agents.
+        The layout is a 2D numpy array representing the grid of the environment.
+        The function initializes the layout with walls and paths.
 
-            nb_lines = int(np.ceil(self.w / 4) // 2 * 2)
-            for i in range(int(nb_lines/2)):
-                self.layout[2:self.h-2, 2 + (5 * i)] = 1
-            for i in range(int(nb_lines/2)):
-                self.layout[2:self.h-2, self.w - 3 - (5 * i)] = 1
+        Parameters:
+        None
 
+        Returns:
+        None
+        """
+        self.print_layout()
 
-            self.layout[2, 2:self.w-3] = 1
+        nb_lines = int(np.ceil(self.w / 4) // 2 * 2)
+        for i in range(int(nb_lines/2)):
+            self.layout[2:self.h-2, 2 + (5 * i)] = 1
+        for i in range(int(nb_lines/2)):
+            self.layout[2:self.h-2, self.w - 3 - (5 * i)] = 1
 
-            self.update_layout()
-            
-        else:
-            pass
+        self.layout[2, 2:self.w-3] = 1
+
+        self.print_layout()
     
     def attribute(self):
+        """
+        This function calculates the start and end positions of the zone each agent is responsible for.
+        The zones are evenly distributed across the width of the layout, excluding the borders.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+
+        The function sets the following attributes:
+        - self.zone_start: The x-coordinate of the start of the agent's zone.
+        - self.zone_end: The x-coordinate of the end of the agent's zone.
+        """
         zone_width = (self.w - 4) // self.nb_agent_expected
         self.zone_start = self.agent_id * zone_width + 2
         self.zone_end = self.zone_start + zone_width
 
-    def find_path(self, end:tuple, start = None) -> list:
+    def find_path(self, end: tuple, start: tuple = None) -> list:
+        """
+        This function calculates the shortest path from a start point to an end point in a 2D grid.
+        It uses the Bresenham's line algorithm to find the path.
+
+        Parameters:
+        - end (tuple): The (x, y) coordinates of the end point.
+        - start (tuple): The (x, y) coordinates of the start point. If not provided, the current agent's position is used.
+
+        Returns:
+        - path (list): A list of (x, y) coordinates representing the shortest path from the start to the end point.
+        """
         if start is None:
             start = (self.x, self.y)
         path = []
@@ -206,6 +327,15 @@ class Agent:
         return path[1:]
 
     def find_neighbour(self, target = None) -> tuple:
+        """
+        This function finds the closest neighbour to a given target point in the layout.
+
+        Parameters:
+        - target (tuple): The (x, y) coordinates of the target point. If not provided, the current agent's position is used.
+
+        Returns:
+        - closest_point (tuple): The (x, y) coordinates of the closest neighbour to the target point.
+        """
         if target is None:
             target = (self.x, self.y)
 
@@ -226,21 +356,29 @@ class Agent:
         return closest_point
     
     def find_item(self):
-        
+        """
+        This function is responsible for navigating the agent to find an item in the grid.
+        The agent uses a simple strategy to determine the direction to move in each step.
 
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
 
         while self.cell_vall != np.float64(1.0):
-            
+
             for i in list_dir:
                 self.move(i)
                 vals[i] = self.cell_vall
                 if self.cell_vall == np.float64(1.0):
                     break
                 self.move(inv_[i])
-            
+
             direction = 0
-            
+
             if self.cell_vall == np.float64(1.0):
                 #self.network.send({"header": GET_ITEM_OWNER})
                 # print(f"Item found at position: ({self.x}, {self.y})")
@@ -266,83 +404,122 @@ class Agent:
                 # print(vals)
                 direction = max(vals, key=vals.get)
             #     print(direction)
-            
+
             # print(f"Direction: {direction} -----------------------------------------")
             # print(f"cell value: {self.cell_vall}")
             with open('direction.txt', 'a') as f:
                 f.write("vals" + str(vals)+"\n")
                 f.write("direction " + str(direction)+"\n")
                 f.write("cell value: " + str(self.x) + ', ' + str(self.y) + "\n\n")
-                
+
 
             self.move(direction)
             self.prev_dir.append(direction)
             if self.cell_vall == np.float64(1.0): self.network.send({"header": GET_ITEM_OWNER})
-            
+
             vals = {UP: 0, DOWN: 0, LEFT: 0, RIGHT: 0}
         return
 
-    def update_dodged_layout(self, x, y, value):
+    def update_layout(self, x: int, y: int, value: int) -> None:
+        """
+        Updates the value at the specified location (x, y) in the layout grid.
+
+        Parameters:
+        x (int): The x-coordinate of the location in the grid.
+        y (int): The y-coordinate of the location in the grid.
+        value (int): The new value to be assigned at the specified location.
+
+        Returns:
+        None
+        """
         self.layout[y][x] = value
         
         
     def dodge_wall(self):
+        """
+        This function is responsible for the agent's ability to dodge walls.
+        The agent navigates through the layout, updating the layout and its position as it goes.
+        It uses the A* algorithm to find the optimal path to dodge the wall.
+        
+        Parameters:
+        self (Agent): The instance of the Agent class.
+
+        Returns:
+        None
+        """
         pos_init = (self.x, self.y)
         path = [pos_init]
-        
-        self.update_dodged_layout(self.x, self.y+1, 0)
-        
+
+        self.update_layout(self.x, self.y+1, 0)
+
         def up_right(path):
             self.move(UP)
-            self.update_dodged_layout(self.x, self.y, 1)
+            self.update_layout(self.x, self.y, 1)
             path.append((self.x, self.y))
-            
+
             self.move(RIGHT)
-            self.update_dodged_layout(self.x, self.y, 1)
+            self.update_layout(self.x, self.y, 1)
             path.append((self.x, self.y))
-            
+
             return path
-        
+
         path = up_right(path)
 
         while pos_init[0] != self.x:
             if self.cell_vall == 0.35:
-                self.update_dodged_layout(self.x, self.y, 0)
+                self.update_layout(self.x, self.y, 0)
                 path = up_right(path)
-            
+
             else :
-                
                 self.move(DOWN)
-                self.update_dodged_layout(self.x, self.y, 1)
+                self.update_layout(self.x, self.y, 1)
                 path.append((self.x, self.y))
-                
+
                 next_pos = (self.x-1, self.y)
-                
+
                 if next_pos not in path:
                     self.move(LEFT)
-                    self.update_dodged_layout(self.x, self.y, 1)    
+                    self.update_layout(self.x, self.y, 1)    
                     if self.cell_vall == 0.35:
-                        self.update_dodged_layout(self.x, self.y, 0)
+                        self.update_layout(self.x, self.y, 0)
                         self.move(RIGHT) 
                     else :
                         while pos_init[0] != self.x:  
                             self.move(LEFT)
-                            self.update_dodged_layout(self.x, self.y, 1) 
-        
-        self.update_layout()
+                            self.update_layout(self.x, self.y, 1) 
+
+        self.print_layout()
         if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
                     self.mode = GOTARGET
-    
-    def check_mode(self):
 
+    def check_mode(self):
+        """
+        This function checks the current mode of the agent and updates it based on certain conditions.
+
+        Parameters:
+        self (Agent): The instance of the Agent class.
+
+        Returns:
+        None. The function updates the mode attribute of the Agent instance.
+        """
         if self.mode == GOTARGET or self.mode == GOONTRACK: 
             if  self.cell_vall == 0.35 :
                 if self.mode != DODGEWALL:
                     self.mode = DODGEWALL
             return
-        
+
         def is_near(x, y, positions):
-            """Vérifie si (x, y) est proche de l'une des positions (±2)."""
+            """
+            Checks if the given coordinates (x, y) are near any of the given positions (within a distance of 2).
+
+            Parameters:
+            x (int): The x-coordinate.
+            y (int): The y-coordinate.
+            positions (list): A list of tuples representing the positions.
+
+            Returns:
+            bool: True if (x, y) is near any of the positions, False otherwise.
+            """
             return any(
                 pos is not None and abs(x - pos[0]) <= 2 and abs(y - pos[1]) <= 2 
                 for pos in positions
@@ -351,45 +528,74 @@ class Agent:
         cell_val_condition = self.cell_vall in [0.3, 0.6, 0.25, 0.5]
         near_keys = is_near(self.x, self.y, self.keys_positions)
         near_boxes = is_near(self.x, self.y, self.boxes_positions)
-         
+
         if  self.cell_vall == 0.35 :
-            self.update_dodged_layout(self.x, self.y, 0)
+            self.update_layout(self.x, self.y, 0)
             if self.mode != DODGEWALL:
                 self.mode = DODGEWALL         
         elif cell_val_condition and not (near_keys or near_boxes):
-            
+
             if self.mode != RESSEARCHANDDESTROY:
                 self.mode = RESSEARCHANDDESTROY
 
         else:
             if self.mode != CLASSIQUE:
                 self.mode = CLASSIQUE
-        
+
         # if not self.mode == GOTARGET:
         #         if all(pos is not None for pos in self.keys_positions) and all(pos is not None for pos in self.boxes_positions):
         #             self.mode = GOTARGET
         #             self.debug([f'MODE {self.mode}'])
 
-    def move(self, direction:int):
-        
+    def move(self, direction: int) -> None:
+        """
+        This function sends a move command to the server with the specified direction.
+
+        Parameters:
+        direction (int): The direction in which the agent should move. It can take values from 0 to 8, inclusive.
+
+        Returns:
+        None
+        """
         cmds = {"header": MOVE, "direction": direction}
-        
+
         self.network.send(cmds)
         sleep(0.5)
 
     def back_on_track(self):
+        """
+        This function is responsible for moving the agent back to its original path.
+        It iterates through the list of previous directions (self.prev_dir) and sends a move command in the opposite direction for each step.
+        After moving back to the original path, it clears the list of previous directions.
+
+        Parameters:
+        self (Agent): The instance of the Agent class.
+
+        Returns:
+        None
+        """
         for i in self.prev_dir:
             self.move(inv_[i])
         self.prev_dir = []
-    
-    def follow_path(self, path):
 
+    def follow_path(self, path):
+        """
+        This function is responsible for the agent following a given path.
+        It iterates through the path, calculates the direction to move in, and sends a move command to the server.
+        It also handles specific modes such as RESSEARCHANDDESTROY and DODGEWALL.
+
+        Parameters:
+        path (list): A list of tuples representing the coordinates in the layout grid.
+
+        Returns:
+        bool: True if the agent has reached the target (GOTARGET mode), False otherwise.
+        """
         x1, y1 = self.x, self.y
 
         direction = None
-        
+
         for i in path:
-            
+
             x2, y2 = i
             if x2 > x1 and y2 == y1:
                 direction = RIGHT
@@ -414,7 +620,7 @@ class Agent:
             if self.mode == RESSEARCHANDDESTROY:
                 self.find_item()
                 self.back_on_track()
-            
+
             elif self.mode == DODGEWALL:
                 self.dodge_wall()
                 return False
@@ -424,9 +630,18 @@ class Agent:
                     self.mode = GOTARGET
                     self.debug([f'MODE {self.mode}'])
                     return True
-            
+
 
     def A_star(self, end) -> list:
+        """
+        A* pathfinding algorithm to find the shortest path from the agent's current position to the given end position.
+
+        Parameters:
+        end (tuple): A tuple representing the end position in the layout grid.
+
+        Returns:
+        list: A list of tuples representing the path from the agent's current position to the end position.
+        """
         start = (self.x, self.y)
         open_set = set()
         open_set.add(start)
@@ -459,6 +674,15 @@ class Agent:
         return []
 
     def find_fork(self) -> list:
+        """
+        This function finds the fork in the layout grid, which is the point where the agents split their paths.
+
+        Parameters:
+        self (Agent): The instance of the Agent class.
+
+        Returns:
+        list: A list of tuples representing the coordinates of the fork in the layout grid.
+        """
         layout_path = []
 
         r = self.zone_end + 1 if self.agent_id == (self.nb_agent_expected - 1) else self.zone_end
@@ -466,37 +690,56 @@ class Agent:
             if self.layout[self.h - 3, i] == 1:
                 layout_path.append((i, self.h - 3))
                 layout_path.append((i, 2))
-        
+
         return layout_path
 
     def get_target(self):
-        
+        """
+        This function is responsible for the agent's movement to collect keys and boxes.
+        It calculates the path to the nearest key and box, and then follows the path to collect them.
+
+        Parameters:
+        self (Agent): The instance of the Agent class.
+
+        Returns:
+        None. The function updates the agent's position and mode.
+        """
         key_pos = self.keys_positions[self.agent_id]
 
         key_neighbour = self.find_neighbour(key_pos)
         key_neighbour = self.layout_to_map(key_neighbour[0], key_neighbour[1])
-    
+
         key_path = self.A_star(key_neighbour) + self.find_path(key_pos, key_neighbour)
-        
+
         if not self.follow_path(key_path):
             self.follow_path(self.A_star(key_neighbour) + self.find_path(key_pos, key_neighbour))
-            
+
 
         box_pos = self.boxes_positions[self.agent_id]
 
         box_neighbour = self.find_neighbour(box_pos)
         box_neighbour = self.layout_to_map(box_neighbour[0], box_neighbour[1])
-        
+
         box_path = self.A_star(box_neighbour) + self.find_path(box_pos, box_neighbour)
 
         agent_neighbour = self.find_neighbour()
         agent_neighbour = self.layout_to_map(agent_neighbour[0], agent_neighbour[1])
-        
+
         self.follow_path(self.find_path(agent_neighbour))
         if not self.follow_path(box_path):
             self.follow_path(self.A_star(box_neighbour) + self.find_path(box_pos, box_neighbour))
 
     def wait(self):
+        """
+        This function is responsible for the agent's waiting behavior.
+        The agent continuously follows its current position until it reaches the GOTARGET mode.
+
+        Parameters:
+        self (Agent): The instance of the Agent class.
+
+        Returns:
+        None. The function continuously follows the agent's position until it reaches the GOTARGET mode.
+        """
         while True:
             self.follow_path([(self.x, self.y)])
             if self.mode == GOTARGET:
@@ -510,13 +753,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     agent = Agent(args.server_ip)
-   
-    
-    
+
+
+
     try:    #Manual control test0
         while True:
             # cmds = {"header": int(input("0 <-> Broadcast msg\n1 <-> Get data\n2 <-> Move\n3 <-> Get nb connected agents\n4 <-> Get nb agents\n5 <-> Get item owner\n"))}
-            
+
             sleep(0.5)
             cmds = {"header": show_menu()}
             if cmds["header"] == BROADCAST_MSG:
@@ -532,8 +775,8 @@ if __name__ == "__main__":
                 agent.build_transformation()
                 agent.build_layout()
                 agent.attribute()
-                
-                
+
+
                 x, y = agent.find_neighbour()
                 # print(f"Neighbour: ({x}, {y})")
                 # print("transform: ", agent.layout_to_map(x, y))
@@ -541,7 +784,7 @@ if __name__ == "__main__":
                 path = agent.find_path(end)
                 # print(f"Path 1: {path}")
                 agent.follow_path(path)
-                
+
                 # print(f"Position: ({agent.x}, {agent.y})")
                 path = agent.A_star((agent.zone_start,2))
                 # print(f"Path 2: {path}")
@@ -560,20 +803,17 @@ if __name__ == "__main__":
                     else :
                         path = agent.A_star(i)
                         agent.follow_path(path)
-                
+
                 agent.debug(['Wait'])
                 agent.wait()
                 agent.debug(['Stop Wait'])
 
                 agent.get_target()
-                
-                
-            
+
+
+
             else:
                 agent.network.send(cmds)
     except KeyboardInterrupt:
         pass
 # it is always the same location of the agent first location
-
-
-
